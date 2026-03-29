@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nMOS Fabrication Process Traveler — UCSB TCR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS CUSTOM PROPERTIES
+   ============================================================ */
+:root {
+  --bg:           #f4f2ee;
+  --surface:      #ffffff;
+  --border:       #d8d4cc;
+  --text:         #1a1814;
+  --text-muted:   #6b6560;
+  --text-subtle:  #9b948c;
+
+  /* Process-type color palette */
+  --clean-bg:     #e8f4f0;
+  --clean-accent: #1a7a5e;
+  --clean-light:  #c8e8df;
+
+  --litho-bg:     #f0e8f4;
+  --litho-accent: #6a2a8a;
+  --litho-light:  #dfc8ef;
+
+  --etch-bg:      #fdf0e4;
+  --etch-accent:  #c4620a;
+  --etch-light:   #f5d9b8;
+
+  --furnace-bg:   #fdeaea;
+  --furnace-accent:#b82020;
+  --furnace-light: #f5c4c4;
+
+  --metrology-bg: #e8eef8;
+  --metrology-accent:#1e4fa0;
+  --metrology-light: #bfd0f0;
+
+  --metal-bg:     #e8e8e8;
+  --metal-accent: #3a3a3a;
+  --metal-light:  #c8c8c8;
+
+  --elec-bg:      #fff9e0;
+  --elec-accent:  #9a7000;
+  --elec-light:   #f0dfa0;
+
+  --optional-bg:  #f8f6f0;
+  --optional-border: #c0b898;
+
+  --step-num-size: 2rem;
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  body { background: white; font-size: 10pt; }
+  .no-print, .sidebar, .fab-progress, .timer-btn, .timer-display, header nav { display: none !important; }
+  .main-content { margin: 0 !important; }
+  .process-card { break-inside: avoid; page-break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+  .step-details { display: block !important; }
+  details[open] summary::after { content: ''; }
+  details summary::after { content: ''; }
+  .process-header { break-after: avoid; }
+  h2 { page-break-after: avoid; }
+  .data-entry-field { border: 1px solid #999 !important; background: white !important; min-height: 20pt; }
+  .cover-page { page-break-after: always; }
+  .process-section { page-break-before: always; }
+  .process-section:first-of-type { page-break-before: auto; }
+  a[href]::after { content: ''; }
+  .legend { display: flex !important; }
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--text);
+  color: #fff;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-brand .lab-name {
+  font-family: 'IBM Plex Sans Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.sidebar-brand h1 {
+  font-family: 'IBM Plex Sans Condensed', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  margin-top: 4px;
+}
+.sidebar-brand .rev {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 6px;
+}
+
+.sidebar-progress {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.progress-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 6px;
+}
+.progress-bar-outer {
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+  height: 5px;
+  overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%;
+  background: #4dc9a0;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 4px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 8px 0 20px;
+  overflow-y: auto;
+}
+
+.nav-group-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.3);
+  padding: 12px 18px 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.12); color: #fff; }
+
+.nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.nav-check {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4dc9a0;
+  flex-shrink: 0;
+  display: none;
+}
+.nav-item.completed .nav-dot { display: none; }
+.nav-item.completed .nav-check { display: block; }
+.nav-item.completed { color: rgba(255,255,255,0.45); }
+
+.main-content {
+  margin-left: 260px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================================
+   COVER PAGE
+   ============================================================ */
+.cover-page {
+  padding: 32px 48px 28px;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: var(--text);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-page::before {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cover-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.cover-content { position: relative; z-index: 1; max-width: 700px; }
+
+.cover-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-family: 'IBM Plex Sans Condensed', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.cover-title span {
+  display: block;
+  color: rgba(255,255,255,0.35);
+  font-size: 1.4rem;
+}
+
+.cover-subtitle {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 40px;
+  font-weight: 300;
+  max-width: 480px;
+}
+
+.cover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.cover-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cover-meta-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+.cover-meta-value {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 500;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   PROCESS SECTIONS
+   ============================================================ */
+.process-section {
+  padding: 40px 48px 48px;
+  border-bottom: 2px solid var(--border);
+}
+
+.process-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.process-number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.process-title-group { flex: 1; }
+.process-title {
+  font-family: 'IBM Plex Sans Condensed', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.process-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-subtle);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.process-completion {
+  text-align: right;
+  flex-shrink: 0;
+}
+.process-completion .mini-progress {
+  width: 80px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.process-completion .mini-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+.process-completion .mini-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-subtle);
+}
+
+/* Section grouping within a process */
+.step-group {
+  margin-bottom: 24px;
+}
+.step-group-label {
+  font-family: 'IBM Plex Sans Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding: 6px 0 6px 12px;
+  border-left: 3px solid var(--border);
+}
+
+/* ============================================================
+   STEP CARDS
+   ============================================================ */
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.step-card:hover { box-shadow: var(--shadow); }
+.step-card.completed { opacity: 0.65; }
+.step-card.completed .step-title { text-decoration: line-through; color: var(--text-muted); }
+
+.step-card.optional {
+  background: var(--optional-bg);
+  border-color: var(--optional-border);
+  border-style: dashed;
+}
+
+.step-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+}
+
+/* Color tab on left */
+.step-type-bar {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.step-checkbox-wrap {
+  padding: 14px 12px 14px 14px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-checkbox {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: white;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  position: relative;
+}
+.step-checkbox:checked {
+  background: #2a9d70;
+  border-color: #2a9d70;
+}
+.step-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  padding: 14px 0;
+  width: 22px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.step-content-wrap {
+  flex: 1;
+  min-width: 0;
+  padding: 0 14px 0 10px;
+}
+
+/* Use details/summary for collapsible */
+.step-details {
+  cursor: default;
+}
+
+.step-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.step-summary::-webkit-details-marker { display: none; }
+
+.step-title-wrap { flex: 1; min-width: 0; }
+.step-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.step-quick-params {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.step-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-optional { background: #e8e0cc; color: #7a6830; }
+.badge-critical { background: #fde0e0; color: #b82020; }
+
+.step-expand-icon {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+details[open] .step-expand-icon { transform: rotate(180deg); }
+
+/* Expanded content */
+.step-body {
+  padding: 0 0 14px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  margin-top: 2px;
+}
+
+.step-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.info-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.info-chip-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.info-chip-value {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.step-detail-text {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 4px;
+  border-left: 3px solid var(--border);
+  white-space: pre-line;
+}
+
+/* Timer */
+.step-timer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.timer-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.15s;
+}
+.timer-btn:hover { filter: brightness(0.9); }
+.timer-btn.start { color: #1a7a5e; }
+.timer-btn.pause { color: #c4620a; }
+.timer-btn.reset  { color: var(--text-muted); }
+.timer-display {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  min-width: 70px;
+}
+.timer-display.running { color: #1a7a5e; }
+.timer-display.done { color: #b82020; }
+
+/* Data entry */
+.data-entry-group {
+  margin-top: 10px;
+}
+.data-entry-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 6px;
+}
+.data-entry-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.data-entry-field {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  width: 130px;
+  transition: border-color 0.15s;
+}
+.data-entry-field:focus {
+  outline: none;
+  border-color: #2a9d70;
+  background: white;
+}
+.data-entry-field::placeholder {
+  color: var(--text-subtle);
+}
+.data-field-unit {
+  font-size: 0.68rem;
+  color: var(--text-subtle);
+  align-self: center;
+}
+
+/* Notes section at end of each process */
+.end-of-day {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: #fffbf0;
+  border: 1px solid #e8d888;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.end-of-day-icon { font-size: 1.1rem; }
+.end-of-day-text { font-size: 0.82rem; color: #7a6830; font-weight: 500; }
+
+.process-notes {
+  margin-top: 20px;
+}
+.notes-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 6px;
+}
+.notes-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+.notes-textarea:focus { outline: none; border-color: #2a9d70; }
+.notes-textarea::placeholder { color: var(--text-subtle); }
+
+/* ============================================================
+   PROCESS TYPE COLORS — applied via JS classes
+   ============================================================ */
+.ptype-clean .step-type-bar,
+.ptype-clean .step-checkbox:checked { background: var(--clean-accent); border-color: var(--clean-accent); }
+.ptype-clean .step-checkbox:checked { background: var(--clean-accent) !important; }
+.ptype-clean .timer-btn.start { color: var(--clean-accent); }
+
+.ptype-litho .step-type-bar { background: var(--litho-accent); }
+.ptype-litho .step-checkbox:checked { background: var(--litho-accent) !important; border-color: var(--litho-accent) !important; }
+.ptype-litho .timer-btn.start { color: var(--litho-accent); }
+
+.ptype-etch .step-type-bar { background: var(--etch-accent); }
+.ptype-etch .step-checkbox:checked { background: var(--etch-accent) !important; border-color: var(--etch-accent) !important; }
+.ptype-etch .timer-btn.start { color: var(--etch-accent); }
+
+.ptype-furnace .step-type-bar { background: var(--furnace-accent); }
+.ptype-furnace .step-checkbox:checked { background: var(--furnace-accent) !important; border-color: var(--furnace-accent) !important; }
+.ptype-furnace .timer-btn.start { color: var(--furnace-accent); }
+
+.ptype-metrology .step-type-bar { background: var(--metrology-accent); }
+.ptype-metrology .step-checkbox:checked { background: var(--metrology-accent) !important; border-color: var(--metrology-accent) !important; }
+.ptype-metrology .timer-btn.start { color: var(--metrology-accent); }
+
+.ptype-metal .step-type-bar { background: var(--metal-accent); }
+.ptype-metal .step-checkbox:checked { background: var(--metal-accent) !important; border-color: var(--metal-accent) !important; }
+
+.ptype-elec .step-type-bar { background: var(--elec-accent); }
+.ptype-elec .step-checkbox:checked { background: var(--elec-accent) !important; border-color: var(--elec-accent) !important; }
+
+/* Process header accent by type */
+.process-section.ptype-clean .process-number { background: var(--clean-light); color: var(--clean-accent); }
+.process-section.ptype-clean .mini-bar { background: var(--clean-accent); }
+.process-section.ptype-litho .process-number { background: var(--litho-light); color: var(--litho-accent); }
+.process-section.ptype-litho .mini-bar { background: var(--litho-accent); }
+.process-section.ptype-etch .process-number { background: var(--etch-light); color: var(--etch-accent); }
+.process-section.ptype-etch .mini-bar { background: var(--etch-accent); }
+.process-section.ptype-furnace .process-number { background: var(--furnace-light); color: var(--furnace-accent); }
+.process-section.ptype-furnace .mini-bar { background: var(--furnace-accent); }
+.process-section.ptype-metrology .process-number { background: var(--metrology-light); color: var(--metrology-accent); }
+.process-section.ptype-metrology .mini-bar { background: var(--metrology-accent); }
+.process-section.ptype-metal .process-number { background: var(--metal-light); color: var(--metal-accent); }
+.process-section.ptype-metal .mini-bar { background: var(--metal-accent); }
+.process-section.ptype-elec .process-number { background: var(--elec-light); color: var(--elec-accent); }
+.process-section.ptype-elec .mini-bar { background: var(--elec-accent); }
+
+/* ============================================================
+   MOBILE / RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; }
+  .cover-page { padding: 24px 18px 20px; }
+  .cover-title { font-size: 1.9rem; }
+  .cover-subtitle { font-size: 0.88rem; margin-bottom: 16px; }
+  .process-section { padding: 20px 14px 28px; }
+  .step-info-grid { grid-template-columns: 1fr 1fr; }
+  .data-entry-fields { flex-direction: column; }
+  .data-entry-field { width: 100%; }
+  .mobile-toc { display: none !important; }
+  .tab-bar { display: flex; }
+}
+
+.mobile-toc {
+  display: none;
+  background: var(--text);
+  color: white;
+  padding: 16px 18px;
+}
+.mobile-toc summary {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+}
+.mobile-toc a {
+  display: block;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.82rem;
+  text-decoration: none;
+  padding: 4px 0;
+  margin-top: 6px;
+}
+
+/* ============================================================
+   STEP DETAIL — BULLET LIST
+   ============================================================ */
+.step-detail-list {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 10px 12px 10px 30px;
+  background: var(--bg);
+  border-radius: 4px;
+  border-left: 3px solid var(--border);
+  list-style: disc;
+}
+.step-detail-list li + li { margin-top: 3px; }
+
+/* ============================================================
+   TAB BAR (mobile primary nav)
+   ============================================================ */
+.tab-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  background: var(--text);
+  z-index: 200;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 10px 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.tab-btn.active { color: #fff; border-bottom-color: #4dc9a0; }
+.tab-btn:hover { color: rgba(255,255,255,0.85); }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.text-mono { font-family: 'IBM Plex Mono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="lab-name">UCSB ECE Teaching Cleanroom</div>
+    <h1>nMOS Fabrication<br>Process Traveler</h1>
+    <div class="rev">REV 1.2</div>
+  </div>
+  <div class="sidebar-progress">
+    <div class="progress-label">Overall Progress</div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="global-progress-bar"></div>
+    </div>
+    <div class="progress-count" id="global-progress-count">0 / 0 steps</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav"></nav>
+</nav>
+
+<!-- MOBILE TOC (fallback, hidden when tabs active) -->
+<details class="mobile-toc no-print">
+  <summary>☰ Process Index</summary>
+  <div id="mobile-nav-links"></div>
+</details>
+
+<!-- TAB BAR (mobile primary nav) -->
+<div class="tab-bar no-print" id="tab-bar">
+  <button class="tab-btn active" data-target="cover" onclick="switchTab('cover')">Overview</button>
+</div>
+
+<!-- MAIN -->
+<main class="main-content" id="main-content">
+
+  <!-- COVER -->
+  <section class="cover-page">
+    <div class="cover-grid"></div>
+    <div class="cover-content">
+      <div class="cover-eyebrow">ECE 120A · ECE 220A · ECE 120B</div>
+      <h1 class="cover-title">
+        nMOS
+        <span>Fabrication Process Traveler</span>
+      </h1>
+      <p class="cover-subtitle">Step-by-step process documentation for planar nMOSFET fabrication in the ECE Teaching Cleanroom. Note: 120B students should devise electrical test plans customized to their IC.</p>
+      <div class="cover-meta">
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Author</span>
+          <span class="cover-meta-value">Prashant Srinivasan</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Revision</span>
+          <span class="cover-meta-value">1.2</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Issue Date</span>
+          <span class="cover-meta-value">March 29, 2026</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Processes</span>
+          <span class="cover-meta-value">0 – 13 (14 total)</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Substrate</span>
+          <span class="cover-meta-value">Si p-type ⟨100⟩, ~70–200 Ω/sq</span>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--clean-accent)"></div>Wet Clean</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--litho-accent)"></div>Photolithography</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--etch-accent)"></div>Wet Etch</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--furnace-accent)"></div>Furnace / Diffusion</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--metrology-accent)"></div>Metrology</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--metal-accent)"></div>Metal Deposition</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--elec-accent)"></div>Electrical Test</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS SECTIONS RENDERED BY JS -->
+  <div id="processes-container"></div>
+
+</main>
+
+<script>
+// ============================================================
+// DATA — All process steps
+// ============================================================
+const PROCESSES = [
+{
+  id: 'p0',
+  num: 0,
+  title: 'Initial Preparation',
+  type: 'metrology',
+  rev: 'REV 1.2',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Initial Wafers',
+      steps: [
+        {
+          num: null,
+          title: 'Wafer Specification',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: null,
+          recipe: null,
+          params: null,
+          detail: 'Si, p-type ⟨100⟩, Typical Rs ~70–100 Ω/sq, 525 μm SSP\nCleave 1.5 in × 1.5 in. Slightly rounded edges are okay.\nUse one wafer to make 4 pieces.\nOxide Test: 2 small samples · Diffusion Test: 1 large sample · Device Samples: 4\nRule of thumb: Make test samples whenever you use the furnace.',
+          timer: null,
+          dataEntries: null,
+        }
+      ]
+    },
+    {
+      label: 'Sample Preparation',
+      steps: [
+        {
+          num: 1,
+          title: 'Cleaving',
+          optional: false,
+          type: 'metrology',
+          materials: 'Wafer scribing pen, Clean Break Pliers',
+          tool: 'Optical Table / Substrate cleaving bench',
+          recipe: null,
+          params: 'n × (1.5 in × 1.5 in)',
+          detail: 'Scribe the wafer with the pen and break it.\nVideo guide: https://www.youtube.com/watch?v=Ym-d8piMd4E',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 2,
+          title: 'Carrier Preparation',
+          optional: false,
+          type: 'metrology',
+          materials: 'Petri dish, Filter paper',
+          tool: null,
+          recipe: null,
+          params: null,
+          detail: 'Take a transparent petri-dish, place a filter paper liner. Do not overlay samples.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 3,
+          title: 'Label and Place Samples',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: 'Cleaving pliers',
+          recipe: null,
+          params: null,
+          detail: 'Affix labels to the petri dish and label the filter paper with sample IDs.',
+          timer: null,
+          dataEntries: null,
+        }
+      ]
+    },
+    {
+      label: 'Sheet Resistance Practice',
+      steps: [
+        {
+          num: 4,
+          title: 'Measure Sheet Resistance (Rs) — All Samples',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: 'Veeco 4PP and Keithley SMU',
+          recipe: 'Follow SOPs on bench',
+          params: null,
+          detail: 'Take 3 readings per sample at different locations and average.\nCompare results from both tools.\n(Optional) Explore various voltage and compliance current ranges.',
+          timer: null,
+          dataEntries: [
+            { label: 'Rs Measurement 1', placeholder: '__ Ω/sq', unit: null },
+            { label: 'Rs Measurement 2', placeholder: '__ Ω/sq', unit: null },
+            { label: 'Rs Measurement 3', placeholder: '__ Ω/sq', unit: null },
+            { label: 'Rs Average', placeholder: '__ Ω/sq', unit: null },
+          ]
+        },
+        {
+          num: 5,
+          title: 'Measure Physical Thickness',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: 'Gauge next to the 4PP',
+          recipe: null,
+          params: '0.01 mm per division',
+          detail: 'Three measurements per sample. Get mean and SD. Compare with manufacturer specs.',
+          timer: null,
+          dataEntries: [
+            { label: 'Thickness 1', placeholder: '__ mm', unit: null },
+            { label: 'Thickness 2', placeholder: '__ mm', unit: null },
+            { label: 'Thickness 3', placeholder: '__ mm', unit: null },
+          ]
+        }
+      ]
+    },
+    {
+      label: 'Growth Calculations',
+      steps: [
+        {
+          num: 6,
+          title: 'Calculate Time to Grow 500 nm SiO₂',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: 'Any computer',
+          recipe: 'Dry–Wet–Dry',
+          params: 'T = 1030 °C, Dry 10 min, Wet, Dry 10 min, 100 Si',
+          detail: 'Use Oxide Growth Calculator. Typically takes ~67 min for wet phase.',
+          timer: null,
+          dataEntries: [
+            { label: 'Calculated wet time', placeholder: '__ min', unit: null }
+          ]
+        }
+      ]
+    },
+    {
+      label: 'Film Thickness Measurement Practice',
+      steps: [
+        {
+          num: 7,
+          title: 'Estimate Oxide Thickness from Color',
+          optional: false,
+          type: 'metrology',
+          materials: 'Color matrix chart',
+          tool: 'Metrology Bench, Bay 2',
+          recipe: null,
+          params: null,
+          detail: 'Estimate thickness of oxide on your samples based on the color chart.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 8,
+          title: 'Calibrate Film Thickness Tools',
+          optional: false,
+          type: 'metrology',
+          materials: 'Calibration wafers',
+          tool: 'Filmetrics F20, Rudolf Auto EL III Ellipsometer',
+          recipe: 'Follow SOP',
+          params: 'Goodness of fit > 99%, n = 1.46',
+          detail: 'As a test you can try to measure native oxide thickness with the Ellipsometer.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 9,
+          title: 'Tool Precision Check',
+          optional: false,
+          type: 'metrology',
+          materials: 'SiO₂ calibration wafer',
+          tool: null,
+          recipe: 'Follow SOP',
+          params: null,
+          detail: 'Take 5 readings at the same spot on the wafer. Calculate standard deviation. This is the tool precision limit.',
+          timer: null,
+          dataEntries: [
+            { label: 'Readings (×5)', placeholder: 'e.g. 102, 103 ... nm', unit: null }
+          ]
+        },
+        {
+          num: 10,
+          title: 'Measure Oxide Thickness of Test Samples',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: null,
+          recipe: null,
+          params: null,
+          detail: 'Same procedure as above.',
+          timer: null,
+          dataEntries: [
+            { label: 'Sample 1 oxide', placeholder: '__ nm', unit: null },
+            { label: 'Sample 2 oxide', placeholder: '__ nm', unit: null },
+          ]
+        }
+      ]
+    }
+  ]
+},
+{
+  id: 'p1',
+  num: 1,
+  title: 'Field Oxide Growth',
+  type: 'furnace',
+  rev: 'REV 1.2',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'RCA Wet Clean',
+      steps: [
+        {
+          num: 1,
+          title: 'RCA SC-1 Clean',
+          optional: false,
+          type: 'clean',
+          critical: false,
+          materials: 'DI Water, 30% H₂O₂, 27% NH₄OH — 5:1:1',
+          tool: 'Corrosives Bench',
+          recipe: 'DI:H₂O₂:NH₄OH @ 234 ml : 36 ml : 30 ml',
+          params: '5 min @ 60–65 °C · 2 min DI flood rinse · blow dry N₂',
+          detail: 'Include one blank 1×1″ test sample (TS1).\nHigher temperatures will roughen the surface, leading to worse devices.',
+          timer: 300,
+          dataEntries: null,
+        },
+        {
+          num: 2,
+          title: 'RCA SC-2 Clean',
+          optional: false,
+          type: 'clean',
+          materials: 'DI Water, 30% H₂O₂, 37% HCl — 6:1:1',
+          tool: 'Corrosives Bench',
+          recipe: 'DI:H₂O₂:HCl @ 228 ml : 36 ml : 36 ml',
+          params: '5 min @ 60–65 °C · 1 min DI flood rinse · blow dry N₂',
+          detail: null,
+          timer: 300,
+          dataEntries: null,
+        },
+        {
+          num: 3,
+          title: 'Native Oxide Strip — BHF',
+          optional: false,
+          type: 'etch',
+          materials: 'Transene Buffered HF Improved',
+          tool: 'HF Bench',
+          recipe: null,
+          params: '10 s dip in BHF with agitation · 2 min DI flood rinse · blow dry N₂',
+          detail: null,
+          timer: 10,
+          dataEntries: null,
+        }
+      ]
+    },
+    {
+      label: 'Oxide Furnace Operations',
+      steps: [
+        {
+          num: 4,
+          title: 'Preheat Furnace',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: 'Bay 1: MRL Industries Growth Furnace',
+          recipe: '200→400 °C 4 min · 400→600 °C 4 min · 600→800 °C 5 min',
+          params: 'Preheat to 800 °C',
+          detail: 'Make sure water bath has started.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 5,
+          title: 'Dry Growth (Pre)',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: null,
+          recipe: 'Set T = 200 °C → load → Set T = 1000 °C → open O₂ valve → close N₂ valve',
+          params: 'T = 10 min',
+          detail: 'Wait until T = 1000 °C before starting the timer.',
+          timer: 600,
+          dataEntries: null,
+        },
+        {
+          num: 6,
+          title: 'Wet Growth',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: null,
+          recipe: 'Close O₂ valve · Open Process valve',
+          params: 'T = calculated time',
+          detail: 'Start the timer.',
+          timer: null,
+          dataEntries: [
+            { label: 'Wet growth duration', placeholder: '__ min', unit: null }
+          ]
+        },
+        {
+          num: 7,
+          title: 'Dry Growth (Post)',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: null,
+          recipe: 'Close Process valve · Open O₂ valve',
+          params: 'T = 10 min',
+          detail: 'Start the timer.',
+          timer: 600,
+          dataEntries: null,
+        },
+        {
+          num: 8,
+          title: 'Unload Samples',
+          optional: false,
+          type: 'furnace',
+          materials: null,
+          tool: null,
+          recipe: null,
+          params: null,
+          detail: 'Wait for samples to cool to room temperature before handling.',
+          timer: null,
+          dataEntries: null,
+        }
+      ]
+    },
+    {
+      label: 'Film Thickness Metrology',
+      steps: [
+        {
+          num: 9,
+          title: 'Calibrate',
+          optional: false,
+          type: 'metrology',
+          materials: 'Calibration wafers',
+          tool: 'Filmetrics F20, Ellipsometer',
+          recipe: 'Follow SOP',
+          params: 'Goodness of fit > 99%',
+          detail: 'Follow SOP posted at bench.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 10,
+          title: 'Tool Precision Check',
+          optional: false,
+          type: 'metrology',
+          materials: 'SiO₂ calibration wafer',
+          tool: null,
+          recipe: 'Follow SOP',
+          params: null,
+          detail: 'Take 5 readings at the same spot. Calculate SD. This is the tool precision limit.',
+          timer: null,
+          dataEntries: null,
+        },
+        {
+          num: 11,
+          title: 'Measure Field Oxide Thickness',
+          optional: false,
+          type: 'metrology',
+          materials: null,
+          tool: null,
+          recipe: null,
+          params: null,
+          detail: 'Same procedure as tool precision check.',
+          timer: null,
+          dataEntries: [
+            { label: 'TS1 oxide thickness', placeholder: '__ nm', unit: null },
+            { label: 'Sample 1 oxide', placeholder: '__ nm', unit: null },
+            { label: 'Sample 2 oxide', placeholder: '__ nm', unit: null },
+          ]
+        }
+      ]
+    }
+  ]
+},
+{
+  id: 'p2',
+  num: 2,
+  title: 'Photolithography — Mask 1',
+  type: 'litho',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  note: '120A Mask Details — Updated Feb 20, 2026',
+  groups: [
+    {
+      label: 'Sample Preparation',
+      steps: [
+        { num:1, title:'Solvent Clean', type:'clean', materials:'Acetone (ACE), Isopropanol (IPA)', tool:'Solvent Bench', recipe:null, params:'2 min ACE · 2 min IPA', detail:'Use ultrasonic agitation. Blow dry with N₂.', timer:null, dataEntries:null },
+        { num:2, title:'DI Water Rinse', type:'clean', materials:null, tool:'Solvent Bench', recipe:null, params:null, detail:'Rinse thoroughly, blow dry.', timer:null, dataEntries:null },
+        { num:3, title:'Dehydration Bake', type:'litho', materials:null, tool:'Dehydration oven bench', recipe:null, params:null, detail:'Bake to drive off surface moisture before HMDS.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Applying Photoresist',
+      steps: [
+        { num:'OPT', title:'Pre-treat with Oxygen Plasma', type:'litho', optional:true, materials:null, tool:'Glow Research Plasma Asher', recipe:'Standard process', params:'30 s', detail:'Set the timer to 30 s.', timer:30, dataEntries:null },
+        { num:4, title:'HMDS Vapor Deposition', type:'litho', materials:'Hexamethyldisilazane (HMDS)', tool:'Spin bench', recipe:null, params:'3 minutes', detail:'Open the glass cover and place your samples around the small petri dish.\nPour 2–3 drops of HMDS into the petri dish using the dropper.\nClose the glass cover and start the timer.', timer:180, dataEntries:null },
+        { num:5, title:'Spin Photoresist — AZ P4110', type:'litho', materials:'AZ P4110', tool:'Spin bench, Laurell WS-650 coater', recipe:null, params:'4k rpm, 30 s', detail:'Check vacuum on the chuck with a test sample first.\nConfirm spin speed = 4k rpm and timer = 30 s.\nPlace sample on chuck (center it), enable vacuum, pour 5 drops of resist.\nStart spin cycle.', timer:30, dataEntries:null },
+        { num:6, title:'Solvent Bake (Softbake)', type:'litho', materials:'Hotplate', tool:'Spin bench', recipe:'95 °C program', params:'1 minute', detail:'Check hotplate temperature with thermocouple.\nPlace samples on hotplate set for 95 °C.\nWatch solvent evaporate for 1 min.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'UV Exposure',
+      steps: [
+        { num:7, title:'Expose — Mask 1', type:'litho', materials:'Photomask, Irradiance meter', tool:'Karl Suss MJB3 Contact Aligner', recipe:null, params:'Dose = 90 mJ/cm²', detail:'Measure UV irradiance first.\nSet timer to ensure appropriate dose (t = Dose / Irradiance).\nFollow the SOP to expose your samples.', timer:null, dataEntries:[{label:'UV irradiance', placeholder:'__ mW/cm²', unit:null},{label:'Exposure time', placeholder:'__ s', unit:null}] },
+        { num:'OPT', title:'Post-Exposure Bake (PEB)', type:'litho', optional:true, materials:null, tool:'Hotplate', recipe:null, params:'95 °C, 1 min 30 s', detail:'PEB improves resolution for features < 2 μm. Necessitates longer development (+10 s). You can test this independently.', timer:90, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Develop',
+      steps: [
+        { num:8, title:'Develop — AZ 400K', type:'litho', materials:'AZ 400K developer', tool:'Development bench', recipe:'Develop one sample at a time for best results', params:'65 s (75 s+ if PEB)', detail:'Pour fresh developer into the small low-profile container labeled AZ400K. Do not overfill.\nPlace sample in dipper, immerse, start timer, agitate gently.\nRinse in DI water for 60 s.\nInspect under microscope — develop longer if needed (+5 s increments).\nUse fresh developer for each sample.', timer:65, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Hardbake & Descum',
+      steps: [
+        { num:11, title:'Hardbake', type:'litho', materials:'Hotplate', tool:'Spin coater bench', recipe:'120 °C program', params:'3 min at 120 °C', detail:'Check temperature with thermocouple system before use!', timer:180, dataEntries:null },
+        { num:12, title:'Plasma Descum', type:'clean', materials:null, tool:'Glow Research Plasma Asher', recipe:'Follow SOP', params:'1 minute plasma clean', detail:'Use the middle tray.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Inspection',
+      steps: [
+        { num:9, title:'Optical Microscope Inspection', type:'metrology', materials:'Zeiss microscope', tool:'Metrology bench', recipe:'Make sure zero is open, fine vernier marks are fully visible', params:null, detail:'Identify critical features.\nRecord resolution of coupons, vernier and middle alignment marks.\nSave images.', timer:null, dataEntries:null },
+        { num:10, title:'Profilometer — Step Height', type:'metrology', materials:null, tool:'KLA Alphastep D300, Metrology bench', recipe:null, params:null, detail:'Check tilt with a test wafer.\nRecord step height over border and number 1.\nRecord data as XML file and images.\nAnalyze profile (step angle, roughness).', timer:null, dataEntries:[{label:'Step height border', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p3',
+  num: 3,
+  title: 'BHF Etch — Diffusion Windows',
+  type: 'etch',
+  rev: 'REV 1.1',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Etch Rate Calibration',
+      steps: [
+        { num:null, title:'Etch Rate Calibration', type:'etch', materials:'BHF, oxide test sample', tool:'HF bench', recipe:null, params:'T = 15, 30, 45, 60 s — then 1 min increments until all oxide removed', detail:'Etch test sample only first.', timer:null, dataEntries:null },
+        { num:null, title:'Measure Residual Film Thickness', type:'metrology', materials:'Filmetrics F20', tool:'Filmetrics bench', recipe:null, params:null, detail:'Measure residual oxide thickness at each time point. Record data. Calculate etch rate.\nPlot etch depth vs time, fit to straight line — slope is the etch rate.', timer:null, dataEntries:[{label:'Etch rate', placeholder:'__ nm/min', unit:null}] }
+      ]
+    },
+    {
+      label: 'Etch Samples',
+      steps: [
+        { num:null, title:'Etch Production Samples', type:'etch', materials:'Buffered Hydrofluoric acid', tool:'HF bench', recipe:null, params:'15% over-etch', detail:'Use etch rate data. Perform on the same day as calibration.\nFigure out etch duration based on your thickest SiO₂ film.\nRotate samples after 1 min of etching to ensure uniformity.\n(Optional) Ask staff about IPA rinse to lower surface tension and prevent delamination.', timer:null, dataEntries:[{label:'Etch duration', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Post-Etch Metrology',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss microscope', tool:'Metrology bench', recipe:null, params:null, detail:'Inspect critical features. Save pictures.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:null, tool:'KLA Alphastep D300, Metrology bench', recipe:null, params:null, detail:'Check tilt with test wafer.\nRecord step height over critical features.\nRecord data as XML and images.\nExtra: Analyze profile (step angle, roughness).', timer:null, dataEntries:[{label:'Etch step height', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Photoresist Strip',
+      steps: [
+        { num:null, title:'Acetone PR Strip', type:'clean', materials:'Acetone', tool:'Solvent Bench', recipe:null, params:'3 min', detail:'Sonicate in acetone from the beaker marked "PR Strip only".', timer:180, dataEntries:null },
+        { num:null, title:'IPA Rinse', type:'clean', materials:'Isopropanol', tool:'Solvent Bench', recipe:null, params:'1 min', detail:'Sonicate in IPA to remove acetone residue.', timer:60, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:'DI Water', tool:'Solvent Bench', recipe:null, params:'1 min', detail:'Rinse in DI water.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Post-Strip Metrology',
+      steps: [
+        { num:null, title:'Repeat Metrology', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Record step heights of critical features and microscope images.\nMeasure step height over the oxide test strip.', timer:null, dataEntries:[{label:'Post-strip step height', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p4',
+  num: 4,
+  title: 'Pre-Diffusion Preparation',
+  type: 'clean',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Sample Preparation',
+      steps: [
+        { num:null, title:'Plasma Clean', type:'clean', materials:'Your samples + 1× Si test sample', tool:'Plasma Asher', recipe:'5 minutes', params:'Ash hardened PR and organic residues', detail:null, timer:300, dataEntries:null }
+      ]
+    },
+    {
+      label: 'RCA Wet Clean',
+      steps: [
+        { num:null, title:'RCA SC-1', type:'clean', materials:'DI Water, 30% H₂O₂, 27% NH₄OH — 5:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:NH₄OH @ 234 ml : 36 ml : 30 ml', params:'5 min @ 60–65 °C · 2 min DI flood rinse · blow dry N₂', detail:'Include one blank Diffusion test sample (TS2).', timer:300, dataEntries:null },
+        { num:null, title:'RCA SC-2', type:'clean', materials:'DI Water, 30% H₂O₂, 37% HCl — 6:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:HCl @ 228 ml : 36 ml : 36 ml', params:'5 min @ 60–65 °C · 1 min DI flood rinse · blow dry N₂', detail:null, timer:300, dataEntries:null },
+        { num:null, title:'Native Oxide Strip — BHF', type:'etch', materials:'Transene Buffered HF Improved', tool:'HF Bench', recipe:null, params:'10 s BHF dip with agitation. No more!\n2 min DI water rinse · blow dry N₂', detail:null, timer:10, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Diffusion Furnace',
+      steps: [
+        { num:null, title:'Preheat Furnace', type:'furnace', materials:'Your samples + blank test sample', tool:'Bay 1: Thermofisher BlueM', recipe:'200→400°C 4min · 400→600°C 4min · 600→800°C 5min · 800→950°C 5min', params:'Preheat', detail:'Follow SOP posted at furnace.', timer:null, dataEntries:null },
+        { num:null, title:'Load Sample Tray', type:'furnace', materials:null, tool:'Wafer boat', recipe:null, params:null, detail:'Make sure the vertex is not sticking out — it will rub against the loading tray and break your samples.', timer:null, dataEntries:null },
+        { num:null, title:'Load and Diffuse', type:'furnace', materials:null, tool:'Follow loading SOP', recipe:null, params:'20 minutes · N₂ flow 14 slpm', detail:null, timer:1200, dataEntries:null },
+        { num:null, title:'Unload Samples', type:'furnace', materials:null, tool:null, recipe:'Reduce all controllers to 200 °C', params:'Wait for sample to cool to room temperature', detail:null, timer:null, dataEntries:null },
+        { num:null, title:'Strip Phosphor Glass', type:'etch', materials:'BHF', tool:'HF bench (Beaker #2)', recipe:'Pay attention to beaker labels — do not cross-contaminate!', params:'~30 s BHF dip (see datasheet)', detail:'Check datasheet to estimate required BHF dip time.', timer:30, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Sheet Resistance — Diffused Layer',
+      steps: [
+        { num:null, title:'Measure Rs — Test Sample', type:'metrology', materials:null, tool:'Veeco 4-point probe', recipe:'Follow SOP', params:null, detail:'Take 5 readings per sample at different locations and get statistics.', timer:null, dataEntries:[{label:'Rs Reading 1', placeholder:'__ Ω/sq', unit:null},{label:'Rs Reading 2', placeholder:'__ Ω/sq', unit:null},{label:'Rs Reading 3', placeholder:'__ Ω/sq', unit:null},{label:'Rs Reading 4', placeholder:'__ Ω/sq', unit:null},{label:'Rs Reading 5', placeholder:'__ Ω/sq', unit:null},{label:'Rs Mean', placeholder:'__ Ω/sq', unit:null},{label:'Rs SD', placeholder:'__ Ω/sq', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p5',
+  num: 5,
+  title: 'Dopant Drive-In',
+  type: 'furnace',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Sample Preparation (if not same day)',
+      steps: [
+        { num:1, title:'RCA SC-1', type:'clean', materials:'DI Water, 30% H₂O₂, 27% NH₄OH — 5:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:NH₄OH @ 234 ml : 36 ml : 30 ml', params:'5 min @ 60–65 °C · 2 min DI flood rinse · blow dry N₂', detail:'Include one blank test sample (TS3).', timer:300, dataEntries:null },
+        { num:2, title:'RCA SC-2', type:'clean', materials:'DI Water, 30% H₂O₂, 37% HCl — 6:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:HCl @ 228 ml : 36 ml : 36 ml', params:'5 min @ 60–65 °C · 1 min DI flood rinse · blow dry N₂', detail:null, timer:300, dataEntries:null },
+        { num:3, title:'Native Oxide Strip — BHF', type:'etch', materials:'Transene Buffered HF Improved', tool:'HF Bench', recipe:null, params:'10 s BHF dip · 2 min DI water rinse · blow dry N₂', detail:null, timer:10, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Drive-In Oxide Growth Calculations',
+      steps: [
+        { num:null, title:'Calculate Time for 300 nm SiO₂', type:'furnace', materials:null, tool:'Any computer', recipe:'Dry–Wet–Dry', params:'T = 1030 °C · Dry 10 min · Wet · Dry 10 min · 100 Si', detail:'Use Oxide Growth Calculator. Typically 30:30 min for wet phase.', timer:null, dataEntries:[{label:'Wet growth duration', placeholder:'__ min', unit:null}] }
+      ]
+    },
+    {
+      label: 'Oxide Furnace',
+      steps: [
+        { num:null, title:'Preheat Furnace', type:'furnace', materials:null, tool:'Bay 1: MRL Industries Growth Furnace', recipe:'200→400°C 4min · 400→600°C 4min · 600→800°C 5min', params:'Preheat to 800 °C', detail:'Make sure water bath has started.', timer:null, dataEntries:null },
+        { num:null, title:'Dry Growth (Pre)', type:'furnace', materials:null, tool:null, recipe:'Set 200°C → load → Set 1000°C → open O₂ → close N₂', params:'T = 10 min', detail:'Wait until T = 1000 °C before starting the timer.', timer:600, dataEntries:null },
+        { num:null, title:'Wet Growth', type:'furnace', materials:null, tool:null, recipe:'Close O₂ valve · Open Process valve', params:'T = calculated time', detail:'Start the timer.', timer:null, dataEntries:null },
+        { num:null, title:'Dry Growth (Post)', type:'furnace', materials:null, tool:null, recipe:'Close Process valve · Open O₂ valve', params:'T = 10 min', detail:'Start the timer.', timer:600, dataEntries:null },
+        { num:null, title:'Unload Samples', type:'furnace', materials:null, tool:null, recipe:null, params:null, detail:'Wait for samples to cool to room temperature.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Drive-In Oxide Thickness Metrology',
+      steps: [
+        { num:null, title:'Calibrate Film Tools', type:'metrology', materials:'Calibration wafers', tool:'Filmetrics F20', recipe:'Follow SOP', params:'Goodness of fit > 99%', detail:'Follow SOP posted.', timer:null, dataEntries:null },
+        { num:null, title:'Tool Precision Check', type:'metrology', materials:'SiO₂ calibration wafer', tool:'Follow SOP', recipe:null, params:null, detail:'Take 5 readings same spot. Calculate SD.', timer:null, dataEntries:null },
+        { num:null, title:'Measure Drive-In Oxide Thickness', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Same procedure as above.', timer:null, dataEntries:[{label:'TS3 oxide thickness', placeholder:'__ nm', unit:null},{label:'Sample 1 drive-in oxide', placeholder:'__ nm', unit:null},{label:'Sample 2 drive-in oxide', placeholder:'__ nm', unit:null}] },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Check tilt with test wafer.\nRecord step height over border and number 1.\nMeasure oxide test strip if present.\nRecord XML and images.', timer:null, dataEntries:[{label:'Step height', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p6',
+  num: 6,
+  title: 'Photolithography — Mask 2',
+  type: 'litho',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  note: '120A Mask Details — Updated Feb 20, 2026',
+  groups: [
+    {
+      label: 'Sample Preparation',
+      steps: [
+        { num:null, title:'Solvent Clean', type:'clean', materials:'Acetone (ACE), Isopropanol (IPA)', tool:'Solvent Bench', recipe:null, params:'2 min ACE · 2 min IPA', detail:null, timer:null, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:null, tool:'Solvent Bench', recipe:null, params:null, detail:null, timer:null, dataEntries:null },
+        { num:null, title:'Dehydration Bake', type:'litho', materials:null, tool:'Dehydration oven bench', recipe:null, params:null, detail:null, timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Applying Photoresist',
+      steps: [
+        { num:null, title:'HMDS Vapor Deposition', type:'litho', materials:'HMDS', tool:'Spin bench', recipe:null, params:'3 minutes', detail:'Open glass cover, place samples around small petri dish.\nPour 2–3 drops of HMDS, close cover, start timer.', timer:180, dataEntries:null },
+        { num:null, title:'Spin Photoresist — AZ P4110', type:'litho', materials:'AZ P4110', tool:'Spin bench', recipe:null, params:'4k rpm, 30 s', detail:'Check vacuum on chuck. Confirm 4k rpm and 30 s timer.\nPlace sample, enable vacuum, pour 5 drops. Start spin cycle.', timer:30, dataEntries:null },
+        { num:null, title:'Solvent Bake', type:'litho', materials:'Hotplate', tool:'Spin bench', recipe:'95 °C program', params:'1 minute', detail:'Check hotplate temperature with IR gun.\nWatch solvent evaporate for 1 min.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Align & Expose',
+      steps: [
+        { num:null, title:'Align Mask 2 and Expose', type:'litho', materials:'Photomask, Irradiance meter', tool:'Karl Suss MJB3 Contact Aligner', recipe:null, params:'Dose = 90 mJ/cm²', detail:'Measure UV irradiance.\nSet timer to ensure appropriate dose.\nFollow SOP to expose samples.', timer:null, dataEntries:[{label:'UV irradiance', placeholder:'__ mW/cm²', unit:null},{label:'Exposure time', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Develop',
+      steps: [
+        { num:null, title:'Develop — AZ 400K', type:'litho', materials:'AZ 400K', tool:'Development bench', recipe:null, params:'60–70 s', detail:'Use fresh developer. Agitate gently. Rinse 60 s DI water.\nInspect under microscope. Develop longer if needed (+5 s increments).', timer:65, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Hardbake & Descum',
+      steps: [
+        { num:null, title:'Hardbake', type:'litho', materials:'Hotplate', tool:'Spin coater bench', recipe:'120 °C program', params:'3 min at 120 °C', detail:'Check temperature with thermocouple probe setup.', timer:180, dataEntries:null },
+        { num:null, title:'Plasma Descum', type:'clean', materials:'Descum tool', tool:null, recipe:'Follow SOP', params:'1 minute plasma clean', detail:null, timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Inspection',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss', tool:'Metrology bench', recipe:'Make sure zero is open, fine vernier marks fully visible', params:null, detail:'Identify critical features. Record resolution of coupons and vernier/alignment marks. Save images.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Check tilt. Record step height over border and number 2. XML and images.', timer:null, dataEntries:[{label:'Step height border #2', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p7',
+  num: 7,
+  title: 'BHF Etch — Gate Window',
+  type: 'etch',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Etch Rate Calibration',
+      steps: [
+        { num:null, title:'Etch Rate Calibration', type:'etch', materials:'BHF, etch rate calibration test sample', tool:'HF bench', recipe:null, params:'T = 15, 30, 45, 60 s — then 1 min increments until all oxide removed', detail:'Etch test sample only.', timer:null, dataEntries:null },
+        { num:null, title:'Measure Residual Film Thickness', type:'metrology', materials:'Filmetrics F20', tool:'Filmetrics bench', recipe:null, params:null, detail:'Calculate etch rate. Plot etch depth vs time. Fit to straight line — slope is etch rate.', timer:null, dataEntries:[{label:'Etch rate', placeholder:'__ nm/min', unit:null}] }
+      ]
+    },
+    {
+      label: 'Etch Samples',
+      steps: [
+        { num:null, title:'Etch Gate Window', type:'etch', materials:'Buffered Hydrofluoric acid', tool:'HF bench', recipe:null, params:'10% over-etch', detail:'Use etch rate data. Perform same day as calibration.\nFigure out etch duration based on your thickest SiO₂ film.', timer:null, dataEntries:[{label:'Etch duration', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Post-Etch Metrology',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss', tool:'Metrology bench', recipe:null, params:null, detail:'Inspect critical features. Save pictures.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Check tilt. Record step height over critical features. XML and images.', timer:null, dataEntries:[{label:'Gate window step height', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Photoresist Strip',
+      steps: [
+        { num:null, title:'Acetone PR Strip', type:'clean', materials:'Acetone', tool:'Solvent Bench', recipe:null, params:'3 min', detail:'Sonicate in acetone from beaker marked "PR Strip only".', timer:180, dataEntries:null },
+        { num:null, title:'IPA Rinse', type:'clean', materials:'Isopropanol', tool:'Solvent Bench', recipe:null, params:'1 min', detail:'Sonicate in IPA.', timer:60, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:'DI Water', tool:'Solvent Bench', recipe:null, params:'1 min', detail:null, timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Post-Strip Metrology',
+      steps: [
+        { num:null, title:'Repeat Metrology', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Record step heights and microscope images.\nScan across oxide test strip region if present.', timer:null, dataEntries:[{label:'Post-strip gate step height', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p8',
+  num: 8,
+  title: 'Gate Oxide Growth',
+  type: 'furnace',
+  rev: 'REV 1.1',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'RCA Wet Clean',
+      steps: [
+        { num:null, title:'RCA SC-1', type:'clean', materials:'DI Water, 30% H₂O₂, 27% NH₄OH — 5:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:NH₄OH @ 234 ml : 36 ml : 30 ml', params:'5 min @ 60–65 °C · 2 min DI flood rinse · blow dry N₂', detail:'Include one blank test sample (TS4). Acid Bench.', timer:300, dataEntries:null },
+        { num:null, title:'RCA SC-2', type:'clean', materials:'DI Water, 30% H₂O₂, 37% HCl — 6:1:1', tool:'Corrosives Bench', recipe:'DI:H₂O₂:HCl @ 228 ml : 36 ml : 36 ml', params:'5 min @ 60–65 °C · 1 min DI flood rinse · blow dry N₂', detail:null, timer:300, dataEntries:null },
+        { num:null, title:'Native Oxide Strip — BHF', type:'etch', materials:'Buffered HF Improved', tool:'HF Bench', recipe:null, params:'10 s BHF dip · 2 min DI water rinse · blow dry N₂', detail:null, timer:10, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Gate Oxide Growth Calculations',
+      steps: [
+        { num:null, title:'Calculate Time for 40–50 nm Gate Oxide', type:'furnace', materials:null, tool:'Any computer', recipe:'Dry only', params:'T = 1030 °C · 100 Si · 55:39 for 50 nm · 42:44 for 40 nm', detail:'Use Oxide Growth Calculator.', timer:null, dataEntries:[{label:'Target thickness', placeholder:'__ nm', unit:null},{label:'Calculated growth time', placeholder:'__ min', unit:null}] }
+      ]
+    },
+    {
+      label: 'Oxide Furnace',
+      steps: [
+        { num:null, title:'Preheat Furnace', type:'furnace', materials:null, tool:'Bay 1: MRL Industries Growth Furnace', recipe:'200→400°C 4min · 400→600°C 4min · 600→800°C 5min', params:'Preheat to 800 °C', detail:'DO NOT turn on water bath for dry-only gate oxide.', timer:null, dataEntries:null },
+        { num:null, title:'Dry Growth', type:'furnace', critical:false, materials:null, tool:null, recipe:'Set 200°C → load → Set 1000°C → open O₂ → close N₂', params:'T = calculated time', detail:'Wait until T = 1000 °C before starting the timer.', timer:null, dataEntries:null },
+        { num:null, title:'Unload Samples', type:'furnace', materials:null, tool:null, recipe:null, params:null, detail:'Wait for samples to cool to room temperature.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Gate Oxide Thickness Metrology',
+      steps: [
+        { num:null, title:'Calibrate Film Tools', type:'metrology', materials:'Calibration wafers', tool:'Filmetrics F20', recipe:'Follow SOP', params:'Goodness of fit > 99%', detail:null, timer:null, dataEntries:null },
+        { num:null, title:'Tool Precision Check', type:'metrology', materials:'SiO₂ calibration wafer', tool:'Follow SOP', recipe:null, params:null, detail:'5 readings same spot. Calculate SD.', timer:null, dataEntries:null },
+        { num:null, title:'Measure Gate Oxide Thickness', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Same procedure. Measure test sample and production samples.', timer:null, dataEntries:[{label:'TS4 gate oxide', placeholder:'__ nm', unit:null},{label:'Sample 1 gate oxide', placeholder:'__ nm', unit:null},{label:'Sample 2 gate oxide', placeholder:'__ nm', unit:null}] },
+        { num:null, title:'Profilometer — Gate Oxide', type:'metrology', materials:null, tool:'Metrology Bench, Bay 2', recipe:null, params:null, detail:'Scan across oxide test strip region if present.', timer:null, dataEntries:[{label:'Gate oxide step height', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p9',
+  num: 9,
+  title: 'Photolithography — Mask 3',
+  type: 'litho',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  note: '120A Mask Details — Updated Feb 20, 2026',
+  groups: [
+    {
+      label: 'Sample Preparation',
+      steps: [
+        { num:null, title:'Solvent Clean', type:'clean', materials:'Acetone (ACE), Isopropanol (IPA)', tool:'Solvent Bench', recipe:null, params:'2 min ACE · 2 min IPA', detail:null, timer:null, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:null, tool:'Solvent Bench', recipe:null, params:null, detail:null, timer:null, dataEntries:null },
+        { num:null, title:'Dehydration Bake', type:'litho', materials:null, tool:'Dehydration oven', recipe:null, params:'3 minutes', detail:null, timer:180, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Applying Photoresist',
+      steps: [
+        { num:null, title:'HMDS Vapor Deposition', type:'litho', materials:'HMDS', tool:'Spin bench', recipe:null, params:'3 minutes', detail:'Open glass cover, place samples. Pour 3–4 drops HMDS. Close cover, start timer.', timer:180, dataEntries:null },
+        { num:null, title:'Spin Photoresist — AZ P4110', type:'litho', materials:'AZ P4110', tool:'Spin bench', recipe:null, params:'4k rpm, 30 s', detail:'Check vacuum. Confirm 4k rpm / 30 s. Pour resist to cover 80% from center. Start spin. Clean up after.', timer:30, dataEntries:null },
+        { num:null, title:'Solvent Bake (Softbake)', type:'litho', materials:'Hotplate', tool:'Spin bench', recipe:'95 °C program', params:'1 minute', detail:'Check temperature with thermocouple.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Align & Expose',
+      steps: [
+        { num:null, title:'Align Mask 3 and Expose', type:'litho', materials:'Photomask, Irradiance meter', tool:'Karl Suss MJB3 Contact Aligner', recipe:null, params:'Dose = 90 mJ/cm²', detail:'Measure UV irradiance. Set timer. Follow SOP.', timer:null, dataEntries:[{label:'UV irradiance', placeholder:'__ mW/cm²', unit:null},{label:'Exposure time', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Develop',
+      steps: [
+        { num:null, title:'Develop — AZ 400K', type:'litho', materials:'AZ 400K', tool:'Development bench', recipe:null, params:'60–70 s', detail:'Use fresh developer. Agitate gently. Rinse 60 s DI. Inspect and develop longer if needed.', timer:65, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Inspection (Pre-Hardbake)',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss', tool:'Metrology bench', recipe:'Make sure zero is open, vernier marks fully visible', params:null, detail:'Identify critical features. Record alignment marks. Save images.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Record step height over border and number 3. XML and images.', timer:null, dataEntries:[{label:'Step height border #3', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Hardbake & Descum',
+      steps: [
+        { num:null, title:'Hardbake', type:'litho', materials:'Hotplate', tool:'Spin coater bench', recipe:'120 °C program', params:'3 min at 120 °C', detail:'Check temperature with thermocouple.', timer:180, dataEntries:null },
+        { num:null, title:'Plasma Descum', type:'clean', materials:null, tool:'Glow Plasma Asher (new tool!)', recipe:'Follow SOP', params:'1 minute plasma clean', detail:null, timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Post-Descum Inspection',
+      steps: [
+        { num:null, title:'Repeat Inspection', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Determine height of photoresist. Scan over borders and number 3. Take pictures of Vernier and alignment marks.', timer:null, dataEntries:null }
+      ]
+    }
+  ]
+},
+{
+  id: 'p10',
+  num: 10,
+  title: 'BHF Etch — Source & Drain Vias',
+  type: 'etch',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  critical: true,
+  groups: [
+    {
+      label: 'Etch Rate Calibration',
+      steps: [
+        { num:null, title:'Etch Rate Calibration', type:'etch', materials:'BHF, etch rate calibration test sample', tool:'HF bench', recipe:null, params:'T = 15 s, 30 s, 45 s, 1 min — then 1 min increments', detail:'Etch test sample only.', timer:null, dataEntries:null },
+        { num:null, title:'Measure Residual Film Thickness', type:'metrology', materials:'Filmetrics F20', tool:'Filmetrics bench', recipe:null, params:null, detail:'Calculate etch rate. Plot etch depth vs time. Slope = etch rate.', timer:null, dataEntries:[{label:'Etch rate', placeholder:'__ nm/min', unit:null}] }
+      ]
+    },
+    {
+      label: 'Etch S/D Vias — CRITICAL STEP',
+      steps: [
+        { num:null, title:'Etch Source & Drain Vias', type:'etch', critical:true, materials:'Buffered Hydrofluoric acid', tool:'HF bench', recipe:null, params:'15% over-etch', detail:'Use etch rate data. Same day as calibration.\nFigure out etch duration based on your thickest SiO₂ film.\nMake sure body bias contacts are fully etched through.', timer:null, dataEntries:[{label:'Etch duration', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Post-Etch Metrology',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss', tool:'Metrology bench', recipe:null, params:null, detail:'Inspect critical features. Save pictures.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Check tilt. Record step heights. XML and images.', timer:null, dataEntries:[{label:'S/D via step height', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Photoresist Strip',
+      steps: [
+        { num:null, title:'Acetone PR Strip', type:'clean', materials:'Acetone', tool:'Solvent Bench', recipe:null, params:'3 min', detail:'Sonicate in acetone from "PR Strip only" beaker.', timer:180, dataEntries:null },
+        { num:null, title:'IPA Rinse', type:'clean', materials:'Isopropanol', tool:'Solvent Bench', recipe:null, params:'1 min', detail:'Sonicate in IPA.', timer:60, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:'DI Water', tool:'Solvent Bench', recipe:null, params:'1 min', detail:null, timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Post-Strip Metrology',
+      steps: [
+        { num:null, title:'Repeat Metrology', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Record step heights and microscope images of critical features.', timer:null, dataEntries:[{label:'Post-strip S/D step height', placeholder:'__ nm', unit:null}] }
+      ]
+    }
+  ]
+},
+{
+  id: 'p11',
+  num: 11,
+  title: 'Photolithography — Mask 4 (Lift-off)',
+  type: 'litho',
+  rev: 'REV 1.0',
+  endOfDay: false,
+  note: '120A Mask Details — Updated Feb 20, 2026. Continue directly to metal deposition.',
+  groups: [
+    {
+      label: 'Sample Preparation',
+      steps: [
+        { num:null, title:'Solvent Clean', type:'clean', materials:'Acetone (ACE), Isopropanol (IPA)', tool:'Solvent Bench', recipe:null, params:'2 min ACE · 2 min IPA', detail:null, timer:null, dataEntries:null },
+        { num:null, title:'DI Water Rinse', type:'clean', materials:null, tool:'Solvent Bench', recipe:null, params:null, detail:null, timer:null, dataEntries:null },
+        { num:null, title:'Dehydration Bake', type:'litho', materials:null, tool:'Dehydration oven bench', recipe:null, params:null, detail:null, timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Applying Photoresist',
+      steps: [
+        { num:null, title:'HMDS Vapor Deposition', type:'litho', materials:'HMDS', tool:'Spin bench', recipe:null, params:'3 minutes', detail:'Open glass cover, place samples. Pour 2–3 drops HMDS. Close cover, start timer.', timer:180, dataEntries:null },
+        { num:null, title:'Spin Photoresist — AZ P4110', type:'litho', materials:'AZ P4110', tool:'Spin bench', recipe:null, params:'4k rpm, 30 s', detail:'Check vacuum. Confirm 4k rpm / 30 s. Pour 5 drops. Start spin cycle.', timer:30, dataEntries:null },
+        { num:null, title:'Solvent Bake', type:'litho', materials:'Hotplate', tool:'Spin bench', recipe:'95 °C program', params:'1 minute', detail:'Check temperature with IR gun.', timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Align & Expose',
+      steps: [
+        { num:null, title:'Align Mask 4 and Expose', type:'litho', materials:'Photomask, Irradiance meter', tool:'Karl Suss MJB3 Contact Aligner', recipe:null, params:'Dose = 90 mJ/cm²', detail:'Measure UV irradiance. Set timer. Follow SOP.', timer:null, dataEntries:[{label:'UV irradiance', placeholder:'__ mW/cm²', unit:null},{label:'Exposure time', placeholder:'__ s', unit:null}] }
+      ]
+    },
+    {
+      label: 'Toluene Soak (Lift-off Prep)',
+      steps: [
+        { num:null, title:'Toluene Soak', type:'litho', materials:'Toluene', tool:'Solvent bench', recipe:null, params:'5 minutes', detail:'Pour 250 mL of Toluene, soak for 5 min.\n⚠ DO NOT RINSE in DI water after toluene soak.', timer:300, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Develop',
+      steps: [
+        { num:null, title:'Develop — AZ 400K (Extended)', type:'litho', materials:'AZ 400K', tool:'Development bench', recipe:null, params:'Add 45–60 s to normal time. Recommended: 2 minutes total.', detail:'Use fresh developer. Agitate gently. Rinse DI 60 s. Inspect under microscope.', timer:120, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Inspection',
+      steps: [
+        { num:null, title:'Optical Microscope', type:'metrology', materials:'Zeiss', tool:'Metrology bench', recipe:'Make sure zero is open, vernier marks fully visible', params:null, detail:'Identify critical features. Record alignment marks. Save images.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer', type:'metrology', materials:'KLA Alphastep D300', tool:'Metrology bench', recipe:null, params:null, detail:'Record step height over borders and number 4. XML and images.', timer:null, dataEntries:[{label:'Step height border #4', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Descum',
+      steps: [
+        { num:null, title:'Plasma Descum', type:'clean', materials:'Descum tool', tool:null, recipe:'Follow SOP', params:'1 minute plasma clean', detail:null, timer:60, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Post-Descum Inspection',
+      steps: [
+        { num:null, title:'Repeat Inspection', type:'metrology', materials:null, tool:null, recipe:null, params:null, detail:'Determine height of photoresist. Scan over borders and number 4. Vernier and alignment mark pictures.', timer:null, dataEntries:null }
+      ]
+    }
+  ]
+},
+{
+  id: 'p12',
+  num: 12,
+  title: 'eBeam Metal Deposition & Lift-Off',
+  type: 'metal',
+  rev: 'REV 1.0',
+  endOfDay: true,
+  groups: [
+    {
+      label: 'Metal Deposition (Staff Only)',
+      steps: [
+        { num:null, title:'Deposit Aluminum — 300 nm', type:'metal', materials:'Aluminum', tool:'TLAB eBeam Evaporator', recipe:null, params:'Al: 300 nm @ 3 Å/s', detail:'⚠ Performed by TA or Lab Manager only.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Lift-Off',
+      steps: [
+        { num:null, title:'Acetone Lift-Off Soak', type:'metal', materials:'Acetone', tool:'Characterization Lab', recipe:null, params:'Leave overnight', detail:'Place your samples in a dipper.\nImmerse in acetone and cover with a glove.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Inspection',
+      steps: [
+        { num:null, title:'Optical Microscope After Lift-Off', type:'metrology', materials:null, tool:'Characterization Lab Microscope', recipe:null, params:null, detail:'Take microscope images. Check for metal residue.', timer:null, dataEntries:null }
+      ]
+    }
+  ]
+},
+{
+  id: 'p13',
+  num: 13,
+  title: 'Electrical Testing',
+  type: 'elec',
+  rev: 'REV 1.0',
+  endOfDay: false,
+  groups: [
+    {
+      label: 'Claim & Clean Lifted-Off Samples',
+      steps: [
+        { num:null, title:'Remove Residual Metal — Clean', type:'clean', materials:null, tool:'Characterization Lab Lift-off bench', recipe:null, params:'Sonicate: 3 min ACE · 3 min IPA · 1 min DI', detail:'Squirt acetone with a pipette to remove most of the metal first.\nSonicate in fresh acetone 3 min → IPA 3 min → DI 1 min.', timer:null, dataEntries:null },
+        { num:null, title:'Optical Microscope — Post-Clean', type:'metrology', materials:null, tool:'Characterization Lab Microscope', recipe:null, params:null, detail:'Take microscope images. Check contact regions.', timer:null, dataEntries:null },
+        { num:null, title:'Profilometer — Metal Thickness', type:'metrology', materials:null, tool:'Profilometer', recipe:null, params:null, detail:'Measure metal layer thickness.', timer:null, dataEntries:[{label:'Al film thickness', placeholder:'__ nm', unit:null}] }
+      ]
+    },
+    {
+      label: 'Resistance Measurements',
+      steps: [
+        { num:null, title:'Measure Resistor Array', type:'elec', materials:'HP 4145B Semiconductor Parameter Analyzer', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Measure resistance of various resistors on the chip. Follow the SOP.', timer:null, dataEntries:[{label:'Resistor 1 value', placeholder:'__ Ω', unit:null},{label:'Resistor 2 value', placeholder:'__ Ω', unit:null},{label:'Expected value', placeholder:'__ Ω', unit:null}] },
+        { num:null, title:'Analysis — Ohmic Behavior', type:'elec', materials:null, tool:null, recipe:null, params:null, detail:'Identify ohmic or non-ohmic behavior. Calculate resistance and compare with expected value.', timer:null, dataEntries:null }
+      ]
+    },
+    {
+      label: 'Diode Characterization',
+      steps: [
+        { num:null, title:'I-V Characteristics of Diodes', type:'elec', materials:'HP 4145B', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Get current vs voltage characteristics with room lights ON and OFF.', timer:null, dataEntries:null },
+        { num:null, title:'Breakdown Voltage', type:'elec', materials:'HP 4145B', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Ramp up reverse voltage until diode breaks down. Record breakdown voltage.', timer:null, dataEntries:[{label:'Breakdown voltage', placeholder:'__ V', unit:null}] }
+      ]
+    },
+    {
+      label: 'C-V Measurements',
+      steps: [
+        { num:null, title:'Measure Capacitance', type:'elec', materials:'HP 4280A CV Meter', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Measure capacitance of small and large capacitors on each die.', timer:null, dataEntries:[{label:'Small cap value', placeholder:'__ pF', unit:null},{label:'Large cap value', placeholder:'__ pF', unit:null}] }
+      ]
+    },
+    {
+      label: 'MOSFET Characterization',
+      steps: [
+        { num:null, title:'Transfer Characteristics — ID vs VGS', type:'elec', materials:'HP 4145B, 4146', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Measure ID vs VGS sweeping VD. Extract threshold voltage (VT) and subthreshold slope.', timer:null, dataEntries:[{label:'VT (threshold voltage)', placeholder:'__ V', unit:null},{label:'ION (at VGS=VDD)', placeholder:'__ μA/μm', unit:null}] },
+        { num:null, title:'Output Characteristics — ID vs VDS', type:'elec', materials:'HP 4145B, 4146', tool:'Characterization Lab — Signatone Probe Station', recipe:null, params:null, detail:'Measure ID vs VDS for various VGS. Identify linear and saturation regions.', timer:null, dataEntries:null }
+      ]
+    }
+  ]
+}
+];
+
+// Type metadata
+const TYPE_META = {
+  clean:    { label: 'Wet Clean',       color: 'var(--clean-accent)' },
+  litho:    { label: 'Photolithography',color: 'var(--litho-accent)' },
+  etch:     { label: 'Wet Etch',        color: 'var(--etch-accent)' },
+  furnace:  { label: 'Furnace',         color: 'var(--furnace-accent)' },
+  metrology:{ label: 'Metrology',       color: 'var(--metrology-accent)' },
+  metal:    { label: 'Metal Dep.',      color: 'var(--metal-accent)' },
+  elec:     { label: 'Electrical Test', color: 'var(--elec-accent)' },
+};
+
+const PROCESS_TYPE_LABELS = {
+  clean:    'Wet Clean',
+  litho:    'Photolithography',
+  etch:     'Wet Etch',
+  furnace:  'Furnace / Drive-In',
+  metrology:'Metrology',
+  metal:    'Metal Deposition',
+  elec:     'Electrical Test',
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+let allCheckboxes = [];
+let timerIntervals = {};
+
+function formatTimer(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function buildTimer(stepId, seconds) {
+  const id = `timer-${stepId}`;
+  return `
+    <div class="step-timer">
+      <span class="timer-display" id="${id}-display">${formatTimer(seconds)}</span>
+      <button class="timer-btn start" onclick="startTimer('${id}', ${seconds})">▶ Start</button>
+      <button class="timer-btn pause" onclick="pauseTimer('${id}')">⏸ Pause</button>
+      <button class="timer-btn reset" onclick="resetTimer('${id}', ${seconds})">↺ Reset</button>
+    </div>`;
+}
+
+let timerState = {};
+
+function startTimer(id, totalSec) {
+  if (timerState[id] && timerState[id].running) return;
+  if (!timerState[id]) timerState[id] = { remaining: totalSec, running: false };
+  timerState[id].running = true;
+  const display = document.getElementById(id + '-display');
+  display.classList.add('running');
+  display.classList.remove('done');
+  timerState[id].interval = setInterval(() => {
+    timerState[id].remaining--;
+    display.textContent = formatTimer(timerState[id].remaining);
+    if (timerState[id].remaining <= 0) {
+      clearInterval(timerState[id].interval);
+      timerState[id].running = false;
+      display.classList.remove('running');
+      display.classList.add('done');
+      display.textContent = 'DONE';
+      try { new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA...').play(); } catch(e) {}
+    }
+  }, 1000);
+}
+
+function pauseTimer(id) {
+  if (!timerState[id]) return;
+  clearInterval(timerState[id].interval);
+  timerState[id].running = false;
+  const display = document.getElementById(id + '-display');
+  display.classList.remove('running');
+}
+
+function resetTimer(id, totalSec) {
+  if (timerState[id]) {
+    clearInterval(timerState[id].interval);
+  }
+  timerState[id] = { remaining: totalSec, running: false };
+  const display = document.getElementById(id + '-display');
+  if (display) {
+    display.textContent = formatTimer(totalSec);
+    display.classList.remove('running', 'done');
+  }
+}
+
+let stepCounter = 0;
+
+function renderStep(step, processType, processId) {
+  stepCounter++;
+  const sid = `step-${processId}-${stepCounter}`;
+  const typeInfo = TYPE_META[step.type] || TYPE_META[processType];
+  const typeColor = typeInfo.color;
+  const isOptional = step.num === 'OPT' || step.optional;
+  const isCritical = step.critical;
+
+  let badges = '';
+  if (isOptional) badges += `<span class="badge badge-optional">Optional</span>`;
+  if (isCritical) badges += `<span class="badge badge-critical">⚠ Critical</span>`;
+
+  let expandIcon = '';
+  const hasBody = step.materials || step.tool || step.recipe || step.detail || step.timer || (step.dataEntries && step.dataEntries.length);
+  if (hasBody) expandIcon = `<span class="step-expand-icon">▾</span>`;
+
+  const numDisplay = step.num !== null ? step.num : '·';
+
+  let bodyHTML = '';
+  if (hasBody) {
+    bodyHTML += `<div class="step-body">`;
+
+    // Info chips
+    const chips = [];
+    if (step.materials) chips.push({ label: 'Materials', value: step.materials });
+    if (step.tool) chips.push({ label: 'Tool / Bench', value: step.tool });
+    if (step.recipe) chips.push({ label: 'Recipe / Program', value: step.recipe });
+    if (step.params) chips.push({ label: 'Parameters', value: step.params });
+
+    if (chips.length) {
+      bodyHTML += `<div class="step-info-grid">`;
+      chips.forEach(c => {
+        bodyHTML += `<div class="info-chip"><div class="info-chip-label">${c.label}</div><div class="info-chip-value">${c.value}</div></div>`;
+      });
+      bodyHTML += `</div>`;
+    }
+
+    if (step.detail) {
+      const lines = step.detail.split('\n').map(l => l.trim()).filter(l => l.length);
+      if (lines.length > 1) {
+        bodyHTML += `<ul class="step-detail-list">${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+      } else {
+        bodyHTML += `<div class="step-detail-text">${step.detail}</div>`;
+      }
+    }
+
+    if (step.timer) {
+      bodyHTML += buildTimer(sid, step.timer);
+    }
+
+    if (step.dataEntries && step.dataEntries.length) {
+      bodyHTML += `<div class="data-entry-group"><div class="data-entry-label">Data Entry</div><div class="data-entry-fields">`;
+      step.dataEntries.forEach((de, di) => {
+        bodyHTML += `<input class="data-entry-field" type="text" placeholder="${de.placeholder}" title="${de.label}" aria-label="${de.label}" data-persist="${sid}-de-${di}" oninput="saveField(this)">`;
+      });
+      bodyHTML += `</div></div>`;
+    }
+
+    bodyHTML += `</div>`;
+  }
+
+  const detailsOpen = !hasBody ? '' : '';
+
+  return `
+    <div class="step-card ptype-${step.type}${isOptional ? ' optional' : ''}" id="${sid}">
+      <div class="step-main">
+        <div class="step-type-bar"></div>
+        <div class="step-checkbox-wrap">
+          <input type="checkbox" class="step-checkbox" data-process="${processId}" onchange="onCheck(this, '${sid}')">
+        </div>
+        <div class="step-num">${numDisplay}</div>
+        <div class="step-content-wrap">
+          ${hasBody ? `<details class="step-details"><summary class="step-summary">
+            <div class="step-title-wrap">
+              <div class="step-title">${step.title}</div>
+              ${step.params && !hasBody ? `<div class="step-quick-params">${step.params}</div>` : ''}
+            </div>
+            ${badges ? `<div class="step-badges">${badges}</div>` : ''}
+            ${expandIcon}
+          </summary>${bodyHTML}</details>`
+          : `<div class="step-summary" style="cursor:default">
+            <div class="step-title-wrap"><div class="step-title">${step.title}</div></div>
+            ${badges ? `<div class="step-badges">${badges}</div>` : ''}
+          </div>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderProcess(proc) {
+  const typeLabel = PROCESS_TYPE_LABELS[proc.type] || proc.type;
+  let html = `
+    <section class="process-section ptype-${proc.type}" id="${proc.id}">
+      <div class="process-header">
+        <div class="process-number">Process ${proc.num}</div>
+        <div class="process-title-group">
+          <div class="process-title">${proc.title}</div>
+          <div class="process-meta">
+            <span>${typeLabel}</span>
+            <span>${proc.rev}</span>
+            ${proc.note ? `<span>${proc.note}</span>` : ''}
+          </div>
+        </div>
+        <div class="process-completion">
+          <div class="mini-progress"><div class="mini-bar" id="mini-bar-${proc.id}"></div></div>
+          <div class="mini-count" id="mini-count-${proc.id}">0 / 0</div>
+        </div>
+      </div>`;
+
+  proc.groups.forEach(group => {
+    html += `<div class="step-group"><div class="step-group-label">${group.label}</div>`;
+    group.steps.forEach(step => {
+      html += renderStep(step, proc.type, proc.id);
+    });
+    html += `</div>`;
+  });
+
+  if (proc.endOfDay) {
+    html += `<div class="end-of-day no-print"><span class="end-of-day-icon">🔒</span><span class="end-of-day-text">End of session — label and store your samples in the designated location.</span></div>`;
+  }
+
+  html += `
+      <div class="process-notes">
+        <div class="notes-label">Session Notes / Observations / Preliminary Results</div>
+        <textarea class="notes-textarea" placeholder="Record observations, measurements, or anything unusual..." data-persist="notes-${proc.id}" oninput="saveField(this)"></textarea>
+      </div>
+    </section>`;
+
+  return html;
+}
+
+function buildSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  const mobileLinks = document.getElementById('mobile-nav-links');
+  let html = '';
+
+  const typeGroups = {};
+  PROCESSES.forEach(p => {
+    const t = p.type;
+    if (!typeGroups[t]) typeGroups[t] = [];
+    typeGroups[t].push(p);
+  });
+
+  // Flat nav for sidebar
+  const typeColor = {
+    clean: 'var(--clean-accent)', litho: 'var(--litho-accent)',
+    etch: 'var(--etch-accent)', furnace: 'var(--furnace-accent)',
+    metrology: 'var(--metrology-accent)', metal: 'var(--metal-accent)', elec: 'var(--elec-accent)'
+  };
+
+  PROCESSES.forEach(p => {
+    const col = typeColor[p.type] || '#888';
+    html += `<a class="nav-item" href="#${p.id}" id="nav-${p.id}">
+      <div class="nav-dot" style="background:${col}"></div>
+      <div class="nav-check"></div>
+      <span>${p.num}. ${p.title}</span>
+    </a>`;
+    if (mobileLinks) mobileLinks.innerHTML += `<a href="#${p.id}">${p.num}. ${p.title}</a>`;
+  });
+
+  nav.innerHTML = html;
+}
+
+function renderAll() {
+  const container = document.getElementById('processes-container');
+  container.innerHTML = PROCESSES.map(p => renderProcess(p)).join('');
+  buildSidebar();
+  buildTabs();
+  updateProgress();
+  restoreFields();
+  initTabMode();
+}
+
+// ============================================================
+// TAB NAVIGATION (mobile)
+// ============================================================
+function isTabMode() {
+  return window.innerWidth <= 768;
+}
+
+function buildTabs() {
+  const tabBar = document.getElementById('tab-bar');
+  if (!tabBar) return;
+  PROCESSES.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    // Abbreviate long titles to keep tabs compact
+    const words = p.title.split(' ');
+    btn.textContent = `${p.num}. ${words.slice(0, 2).join(' ')}`;
+    btn.dataset.target = p.id;
+    btn.setAttribute('onclick', `switchTab('${p.id}')`);
+    tabBar.appendChild(btn);
+  });
+}
+
+function switchTab(targetId) {
+  if (!isTabMode()) {
+    // Desktop: just scroll
+    const el = document.getElementById(targetId === 'cover' ? 'main-content' : targetId);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  const cover = document.querySelector('.cover-page');
+  const sections = document.querySelectorAll('.process-section');
+  const tabs = document.querySelectorAll('.tab-btn');
+
+  if (targetId === 'cover') {
+    if (cover) cover.style.display = '';
+    sections.forEach(s => s.style.display = 'none');
+  } else {
+    if (cover) cover.style.display = 'none';
+    sections.forEach(s => {
+      s.style.display = s.id === targetId ? '' : 'none';
+    });
+  }
+
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.target === targetId));
+  window.scrollTo(0, 0);
+}
+
+function initTabMode() {
+  if (!isTabMode()) return;
+  // Hide all process sections; show cover by default
+  document.querySelectorAll('.process-section').forEach(s => s.style.display = 'none');
+  const overviewBtn = document.querySelector('.tab-btn[data-target="cover"]');
+  if (overviewBtn) overviewBtn.classList.add('active');
+}
+
+window.addEventListener('resize', () => {
+  if (!isTabMode()) {
+    // Restore all sections when switching to desktop
+    const cover = document.querySelector('.cover-page');
+    if (cover) cover.style.display = '';
+    document.querySelectorAll('.process-section').forEach(s => s.style.display = '');
+  }
+});
+
+// ============================================================
+// CHECKBOX + PROGRESS
+// ============================================================
+function onCheck(cb, sid) {
+  const card = document.getElementById(sid);
+  if (cb.checked) {
+    card.classList.add('completed');
+  } else {
+    card.classList.remove('completed');
+  }
+  updateProgress();
+  saveCheckbox(sid, cb.checked);
+}
+
+function updateProgress() {
+  const allCBs = document.querySelectorAll('.step-checkbox');
+  const checkedCBs = document.querySelectorAll('.step-checkbox:checked');
+  const total = allCBs.length;
+  const done = checkedCBs.length;
+
+  // Global
+  const pct = total ? (done / total * 100) : 0;
+  document.getElementById('global-progress-bar').style.width = pct + '%';
+  document.getElementById('global-progress-count').textContent = `${done} / ${total} steps`;
+
+  // Per-process
+  PROCESSES.forEach(p => {
+    const pCBs = document.querySelectorAll(`[data-process="${p.id}"]`);
+    const pDone = document.querySelectorAll(`[data-process="${p.id}"]:checked`).length;
+    const pTotal = pCBs.length;
+    const pPct = pTotal ? (pDone / pTotal * 100) : 0;
+
+    const bar = document.getElementById(`mini-bar-${p.id}`);
+    const count = document.getElementById(`mini-count-${p.id}`);
+    if (bar) bar.style.width = pPct + '%';
+    if (count) count.textContent = `${pDone} / ${pTotal}`;
+
+    // Nav item completed?
+    const navItem = document.getElementById(`nav-${p.id}`);
+    if (navItem) {
+      if (pTotal > 0 && pDone === pTotal) {
+        navItem.classList.add('completed');
+      } else {
+        navItem.classList.remove('completed');
+      }
+    }
+  });
+}
+
+// ============================================================
+// PERSIST TO LOCALSTORAGE
+// ============================================================
+function saveCheckbox(sid, checked) {
+  try { localStorage.setItem('nmos-cb-' + sid, checked ? '1' : '0'); } catch(e) {}
+}
+
+function saveField(el) {
+  const key = el.getAttribute('data-persist');
+  if (!key) return;
+  try { localStorage.setItem('nmos-field-' + key, el.value); } catch(e) {}
+}
+
+function restoreFields() {
+  try {
+    // Checkboxes
+    document.querySelectorAll('.step-checkbox').forEach((cb, i) => {
+      const card = cb.closest('.step-card');
+      const sid = card ? card.id : null;
+      if (sid) {
+        const saved = localStorage.getItem('nmos-cb-' + sid);
+        if (saved === '1') { cb.checked = true; card.classList.add('completed'); }
+      }
+    });
+
+    // Text fields
+    document.querySelectorAll('[data-persist]').forEach(el => {
+      const key = el.getAttribute('data-persist');
+      const saved = localStorage.getItem('nmos-field-' + key);
+      if (saved !== null) el.value = saved;
+    });
+  } catch(e) {}
+
+  updateProgress();
+}
+
+// ============================================================
+// INTERSECTION OBSERVER — active nav highlight
+// ============================================================
+function setupObserver() {
+  const sections = document.querySelectorAll('.process-section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const navItem = document.getElementById('nav-' + entry.target.id);
+        if (navItem) navItem.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderAll();
+  setupObserver();
+});
+</script>
+</body>
+</html>
